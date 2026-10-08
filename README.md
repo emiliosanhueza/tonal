@@ -27,7 +27,8 @@ The database (`tonal.db`) and `backups/` are kept local and not committed.
 
 ## Data sources
 
-- BPM and key data provided by [GetSongBPM](https://getsongbpm.com) via the [GetSongBPM API](https://getsongbpm.com/api).
-- Key, mode and felt-tempo analyses from [Hooktheory TheoryTab](https://www.hooktheory.com/theorytab).
+- Key, mode and felt-tempo analyses from [Hooktheory TheoryTab](https://www.hooktheory.com/theorytab), used first for every song.
+- For songs Hooktheory doesn't cover: [Tunebat](https://tunebat.com) (Spotify audio analysis), fetched through [Firecrawl](https://firecrawl.dev).
+- Optional: BPM and key data from [GetSongBPM](https://getsongbpm.com) via the [GetSongBPM API](https://getsongbpm.com/api), used when an API key is configured.
 
 Lookups are done by the scripts in `.claude/skills/bpm-lookup/`. The GetSongBPM API key is read from the `GETSONGBPM_API_KEY` environment variable or a local `.getsongbpm_key` file, which is git-ignored.
