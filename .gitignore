@@ -1,0 +1,12 @@
+# Personal data and runtime files: stay on this Mac
+tonal.db
+tonal.db-*
+backups/
+tonal.log
+.DS_Store
+
+# GetSongBPM API key: never commit
+.getsongbpm_key
+
+# Personal song lists
+seed/

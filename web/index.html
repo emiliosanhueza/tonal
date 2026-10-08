@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tonal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='15' fill='%23e3893a'/><circle cx='16' cy='16' r='6' fill='%2316100c'/></svg>">
+<script>
+  try { const t = localStorage.getItem('tonal:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</head>
+<body>
+<div class="app">
+  <header class="brand">
+    <div>
+      <h1 class="logo">Ton<em>a</em>l</h1>
+      <div class="tagline">Your song library for harmonic mixing and beatmatched sets</div>
+    </div>
+    <div class="header-right">
+      <div class="stat">Songs<strong id="stat-songs" class="num">–</strong></div>
+      <div class="stat">Sets<strong id="stat-sets" class="num">–</strong></div>
+      <div class="stat">Keys used<strong id="stat-keys" class="num">–</strong></div>
+      <div>
+        <div class="save-pill" id="save-pill"><span class="dot"></span><span id="save-text">Connecting…</span></div>
+        <button class="btn btn-ghost btn-sm" id="theme-btn" style="margin-top:6px">Light theme</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="library">Library</button>
+    <button class="tab" data-tab="builder">Mix Builder</button>
+    <button class="tab" data-tab="playlists">Playlists <span class="count" id="tab-pl-count"></span></button>
+    <button class="tab" data-tab="wheel">Key Wheel</button>
+    <button class="tab" data-tab="import">Import &amp; Backup</button>
+  </nav>
+
+  <!-- ======================= LIBRARY ======================= -->
+  <section class="panel active" id="panel-library">
+    <form class="card quick-add" id="qa-form" autocomplete="off">
+      <div class="section-title">Add a song</div>
+      <div class="qa-grid">
+        <div><label class="field" for="qa-title">Title</label><input id="qa-title" placeholder="Praise You" required></div>
+        <div><label class="field" for="qa-artist">Artist</label><input id="qa-artist" placeholder="Fatboy Slim"></div>
+        <div>
+          <label class="field" for="qa-bpm">BPM</label>
+          <div class="bpm-wrap">
+            <input id="qa-bpm" class="num" type="number" min="30" max="300" step="0.1" placeholder="109">
+            <button type="button" class="btn btn-sm" id="qa-tap" title="Tap tempo">Tap</button>
+          </div>
+        </div>
+        <div>
+          <label class="field" for="qa-key">Key</label>
+          <input id="qa-key" placeholder="Ab mixolydian · Bbm · 8A">
+          <div class="key-preview" id="qa-key-preview">Any format: Am, F♯m, E♭ dorian, 3B</div>
+        </div>
+        <div class="qa-actions">
+          <button class="btn btn-primary" type="submit">Add song</button>
+          <button class="btn btn-ghost" type="button" id="qa-more-btn">More fields</button>
+        </div>
+      </div>
+      <div class="qa-more hidden" id="qa-more">
+        <div><label class="field" for="qa-energy">Energy 1–5</label><input id="qa-energy" type="number" min="1" max="5"></div>
+        <div><label class="field" for="qa-rating">Rating 1–5</label><input id="qa-rating" type="number" min="1" max="5"></div>
+        <div><label class="field" for="qa-duration">Length</label><input id="qa-duration" placeholder="4:32"></div>
+        <div><label class="field" for="qa-tags">Tags</label><input id="qa-tags" placeholder="disco, warm-up"></div>
+        <div><label class="field" for="qa-notes">Notes</label><input id="qa-notes" placeholder="Mix out on the breakdown at 2:40"></div>
+      </div>
+    </form>
+
+    <div class="toolbar">
+      <input class="search" id="lib-search" type="search" placeholder="Search title, artist, tags, notes…">
+      <span id="lib-key-chip"></span>
+      <select id="lib-mode" title="Filter by mode">
+        <option value="">All modes</option>
+      </select>
+      <span class="bpm-range">BPM <input id="lib-bpm-min" class="num" type="number" placeholder="min"> – <input id="lib-bpm-max" class="num" type="number" placeholder="max"></span>
+      <label class="check" title="Also match songs at half or double the tempo"><input type="checkbox" id="lib-halfdouble"> ½× / 2×</label>
+      <select id="lib-harm" title="Show only songs that blend harmonically with this key"></select>
+      <label class="check" title="Hide songs that are missing a key or a BPM"><input type="checkbox" id="lib-complete"> Only with key &amp; BPM</label>
+      <button class="btn btn-ghost btn-sm" id="lib-clear">Clear filters</button>
+      <span class="muted" id="lib-count" style="margin-left:auto"></span>
+    </div>
+
+    <div id="lib-harm-panel"></div>
+
+    <div class="bulk-bar hidden" id="bulk-bar">
+      <strong id="bulk-count"></strong>
+      <button class="btn btn-sm" id="bulk-to-set">Add to current set</button>
+      <button class="btn btn-sm" id="bulk-new-pl">New playlist from selection</button>
+      <button class="btn btn-sm" id="bulk-to-pl">Add to playlist…</button>
+      <button class="btn btn-sm btn-danger" id="bulk-delete">Delete</button>
+      <button class="btn btn-ghost btn-sm" id="bulk-clear">Clear selection</button>
+    </div>
+
+    <div class="table-wrap"><div id="lib-table"></div></div>
+  </section>
+
+  <!-- ======================= BUILDER ======================= -->
+  <section class="panel" id="panel-builder">
+    <div class="card set-strip">
+      <div class="set-head">
+        <div>
+          <h3 id="set-name">Untitled set</h3>
+          <div class="muted" id="set-meta">Pick a starting song, then add suggestions one by one.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" id="set-save">Save as playlist</button>
+          <button class="btn btn-sm" id="set-rename">Rename</button>
+          <button class="btn btn-sm" id="set-order">Smart order</button>
+          <button class="btn btn-sm btn-danger" id="set-clear">Clear</button>
+        </div>
+      </div>
+      <div class="chain" id="set-chain"></div>
+    </div>
+
+    <div class="mix-layout">
+      <aside>
+        <div class="section-title">Now playing</div>
+        <div class="card now-card" id="now-card"></div>
+
+        <div class="section-title" style="margin-top:20px">Pick a song</div>
+        <input type="search" id="picker-search" placeholder="Search your library…">
+        <div class="picker" id="picker"></div>
+
+        <div class="section-title" style="margin-top:20px">Matching rules</div>
+        <div class="card settings">
+          <div class="row">
+            <label class="field">Key strictness</label>
+            <div class="seg" id="opt-strict">
+              <button data-v="0">Smooth</button><button data-v="1" class="active">Standard</button><button data-v="2">Adventurous</button>
+            </div>
+            <div class="hint" id="strict-hint"></div>
+          </div>
+          <div class="row">
+            <label class="field">Tempo window</label>
+            <div class="seg" id="opt-window">
+              <button data-v="3">±3%</button><button data-v="6" class="active">±6%</button><button data-v="10">±10%</button><button data-v="100">Any</button>
+            </div>
+          </div>
+          <div class="row">
+            <label class="field">Energy direction</label>
+            <div class="seg" id="opt-energy">
+              <button data-v="" class="active">Any</button><button data-v="up">Build</button><button data-v="hold">Hold</button><button data-v="down">Cool down</button>
+            </div>
+          </div>
+          <div class="row">
+            <label class="check"><input type="checkbox" id="opt-halfdouble" checked> Allow half-time / double-time matches</label>
+          </div>
+        </div>
+      </aside>
+
+      <section>
+        <div class="section-title" id="sug-title">Best next songs</div>
+        <div class="suggest" id="suggest"></div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ======================= PLAYLISTS ======================= -->
+  <section class="panel" id="panel-playlists"><div id="pl-root"></div></section>
+
+  <!-- ======================= WHEEL ======================= -->
+  <section class="panel" id="panel-wheel">
+    <div class="wheel-layout">
+      <div>
+        <div class="card wheel" id="wheel"></div>
+        <div class="legend">
+          <span>Outer ring: <b>B</b> — major-side modes (Lydian, Major, Mixolydian)</span>
+          <span>Inner ring: <b>A</b> — minor-side modes (Dorian, Minor, Phrygian, Locrian)</span>
+        </div>
+      </div>
+      <div id="wheel-detail"></div>
+    </div>
+  </section>
+
+  <!-- ======================= IMPORT ======================= -->
+  <section class="panel" id="panel-import">
+    <div class="import-layout">
+      <div>
+        <h2 class="view-title">Batch import</h2>
+        <p class="dim" style="margin-top:0">Paste a list, drop a file, or both. Nothing is saved until you review the preview and click Import.</p>
+        <div class="drop" id="drop">
+          <textarea id="imp-text" rows="11" placeholder="Paste here, for example:&#10;Fatboy Slim - Praise You, 109, Ab mixolydian&#10;Beirut - Nantes | 132 | Eb dorian&#10;Sade - The Sweetest Taboo	92	Bbm"></textarea>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px">
+            <button class="btn btn-primary" id="imp-parse">Preview import</button>
+            <label class="btn" for="imp-file">Choose file…</label>
+            <input type="file" id="imp-file" accept=".csv,.tsv,.txt,.json" class="hidden">
+            <label class="check"><input type="checkbox" id="imp-swap"> Lines are “Title – Artist”</label>
+            <span class="muted">or drag a .csv / .json file onto this box</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="section-title">Formats Tonal understands</div>
+          <div class="formats">
+            <p><b>CSV or TSV with headers</b> — e.g. a spreadsheet export. Columns are matched by name:
+              <code>Title/Song</code> <code>Artist</code> <code>BPM</code> <code>Key</code> <code>Notes</code> <code>Tags</code> <code>Energy</code> <code>Rating</code> <code>Length</code>.</p>
+            <p><b>One song per line</b> — separate fields with commas, tabs or <code>|</code>:</p>
+            <pre class="code">Artist - Title, BPM, Key</pre>
+            <p><b>JSON</b> — a Tonal backup, an export from your earlier Tonal / Harmonic Mix Table files (playlists come along too), or any array of song objects.</p>
+            <p><b>Keys</b> can be written as <code>Am</code> <code>F#m</code> <code>Db</code> <code>E♭ Dorian</code> <code>A♭ Mixolydian</code> <code>8A</code> (Camelot) or <code>5m</code> (Open Key).</p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="section-title">Backup &amp; export</div>
+          <p class="dim" style="margin-top:0">Your library lives in <span class="code" id="db-path">tonal.db</span>. A dated copy goes into <span class="code">backups/</span> every day you open Tonal.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <a class="btn" href="/api/backup.json">Download full backup (.json)</a>
+            <a class="btn" href="/api/songs.csv">Export songs (.csv)</a>
+            <label class="btn btn-danger" for="restore-file">Restore from backup…</label>
+            <input type="file" id="restore-file" accept=".json" class="hidden">
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <details class="help">
+            <summary>Add songs from Terminal</summary>
+            <div class="help-body">
+              <p>From the Tonal folder:</p>
+              <pre class="code">python3 tonal.py add "Praise You" "Fatboy Slim" --bpm 109 --key "Ab mixolydian"
+python3 tonal.py import my-songs.csv
+python3 tonal.py list --key 3B</pre>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+    <div id="imp-preview"></div>
+  </section>
+</div>
+
+<div class="backdrop" id="backdrop"><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="theory.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
